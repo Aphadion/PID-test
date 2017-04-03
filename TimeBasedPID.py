@@ -1,43 +1,63 @@
 import math
-from datetime import datetime, timedelta
+import numpy
 import time
 
+from datetime import datetime, timedelta
+from tabulate import tabulate
+
 """To Do:
-1. Add method to remove jobs after timeout given by normal dist.
-2. Set functions to iterate over discrete "time" (for now)
+1. Add method to remove jobs after timeout given by normal distribution
+2. Sort out a proper way of looping discrete_time (I really don't think a
+global variable is the way to go)
 3. Output results in CSV(?) format for graphing in Excel
 """
-# test
 
+
+class ProcessingJob:
+    """A Processing Job with ID, start time and processing duration"""
+    def __init__(self, id, start_time, proc_duration):
+        self.id = id
+        self.start_time = start_time
+        self.proc_duration = proc_duration
+        self.stop_time = start_time + proc_duration
 
 
 class JobList:
     """Stores list of processing jobs with start times"""
     def __init__(self):
-        self.dict = {}
+        self.jobs = []
         self.newest_id = 1
 
     def __len__(self):
-        self.len = len(self.dict)
+        self.len = len(self.jobs)
         return self.len
 
     def addNew(self):
         # Add new job to the job dictionary with unique ID, storing start time
-        start_time = datetime.utcnow()
-        job_id = format(self.newest_id, '04d')
+        start_time = discrete_time
+        proc_duration = round(numpy.random.normal(loc=180, scale=30))
+        job_id = self.newest_id
         self.newest_id += 1
-        self.dict[job_id] = start_time
+        new_job = ProcessingJob(job_id, start_time, proc_duration)
+        self.jobs.append(new_job)
         return job_id
 
     def calculateDelay(self):
         # Calculate the total waiting time, for all jobs, in seconds
         job_delay = 0
-        current_time = datetime.utcnow()
-        for start_time in self.dict.values():
+        current_time = discrete_time
+        for start_time in [job.start_time for job in self.jobs]:
             delta_time = current_time - start_time
-            job_delay += delta_time.total_seconds()
-
+            job_delay += delta_time
         return job_delay
+
+    def printJobs(self):
+        # Print the current processing jobs in readable format
+        display_table = [['Job ID', 'Start Time']]
+        for job in self.jobs:
+            display_table.append([job.id, job.start_time])
+        print(tabulate(display_table))
+        return True
 
 class PID:
     """Performs PID strategy calculation actions"""
@@ -66,16 +86,20 @@ class PID:
 
 def main():
 
+
+    global discrete_time
+    discrete_time = 0
+
     jobs = JobList()
 
     jobs.addNew()
-    time.sleep(1)
+    discrete_time += 1
     jobs.addNew()
-    time.sleep(1)
+    discrete_time += 2
     jobs.addNew()
-    time.sleep(2)
+    discrete_time += 3
 
-    print(jobs.dict)
+    jobs.printJobs()
 
     error = jobs.calculateDelay()
     requests = len(jobs)
@@ -86,5 +110,5 @@ def main():
 
     print(new_PID.calculateControl(error, requests))
 
-if name == "__main__":
+if __name__ == "__main__":
     main()
